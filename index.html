@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -269,15 +269,14 @@
     import { getFirestore, doc, getDoc, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyCsjzTTbX_MdB1_LdSAbgyCXVhHy7AUwZo",
-  authDomain: "testseries-26f1d.firebaseapp.com",
-  projectId: "testseries-26f1d",
-  storageBucket: "testseries-26f1d.firebasestorage.app",
-  messagingSenderId: "915074481416",
-  appId: "1:915074481416:web:c17625c072eb533930c0bd",
-  measurementId: "G-XNSBW986ZG"
-};
-    
+      apiKey: "AIzaSyCsjzTTbX_MdB1_LdSAbgyCXVhHy7AUwZo",
+      authDomain: "testseries-26f1d.firebaseapp.com",
+      projectId: "testseries-26f1d",
+      storageBucket: "testseries-26f1d.firebasestorage.app",
+      messagingSenderId: "915074481416",
+      appId: "1:915074481416:web:c17625c072eb533930c0bd",
+      measurementId: "G-XNSBW986ZG"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -295,12 +294,10 @@
     let isExamActive = false;
     let examConfigData = null;
 
-    // Security track
     let tabSwitches = parseInt(sessionStorage.getItem('tabSwitches') || '0');
     let copiesAttempted = parseInt(sessionStorage.getItem('copiesAttempted') || '0');
     let penaltiesApplied = parseInt(sessionStorage.getItem('penaltiesApplied') || '0');
 
-    // Tab Switch Handler (1st time = -1 mark penalty & question change, 2nd time = Auto Submit)
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && isExamActive) {
         tabSwitches++;
@@ -338,7 +335,6 @@
 
     document.addEventListener('contextmenu', event => event.preventDefault());
 
-    // Window Schedule & Config Loader
     async function checkOverallExamWindow() {
       try {
         const docRef = doc(db, "exam_config", "current_test");
@@ -438,8 +434,7 @@
         const jsonString = rawText.substring(rawText.indexOf('['), rawText.lastIndexOf(']') + 1);
         let fullPool = JSON.parse(jsonString);
 
-        // Randomly pick limit from pool
-        const limit = examConfigData?.studentLimit || fullPool.length;
+        const limit = examConfigData?.questionLimit || fullPool.length;
         fullPool = fullPool.sort(() => 0.5 - Math.random());
         questionsList = fullPool.slice(0, limit);
 
@@ -546,7 +541,17 @@
       questionsList.forEach((q, idx) => {
         const selectedIdx = selectedAnswers[idx];
         const studentSelectionText = selectedIdx !== undefined ? q.options[selectedIdx] : `<span style="color:var(--danger)">Not Attempted</span>`;
-        const correctSelectionText = q.a || q.correct || q.ans || 'N/A';
+        
+        let correctSelectionText = '';
+        const rawAns = q.a ?? q.correct ?? q.ans;
+        if (typeof rawAns === 'number') {
+          correctSelectionText = q.options[rawAns];
+        } else if (!isNaN(rawAns) && rawAns !== '') {
+          correctSelectionText = q.options[parseInt(rawAns)];
+        } else {
+          correctSelectionText = rawAns || 'N/A';
+        }
+
         const isCorrect = selectedIdx !== undefined && studentSelectionText === correctSelectionText;
 
         if (selectedIdx !== undefined) {
@@ -612,6 +617,8 @@
         copiesAttempted: parseInt(sessionStorage.getItem('copiesAttempted') || '0'),
         penaltiesApplied: parseInt(sessionStorage.getItem('penaltiesApplied') || '0'),
         feedback: document.getElementById('feedback-input').value.trim() || "None",
+        doubt: document.getElementById('doubt-input').value.trim() || "None",
+        rating: selectedRating,
         submittedAt: new Date()
       };
 
@@ -623,6 +630,10 @@
         alert("Submission Error: " + e.message);
       }
     }
+
+    // Explicit window mappings
+    window.handleNext = window.handleNext || handleNext;
+    window.handlePrevious = window.handlePrevious || handlePrevious;
 
     window.addEventListener('DOMContentLoaded', checkOverallExamWindow);
   </script>
