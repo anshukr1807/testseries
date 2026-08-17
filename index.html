@@ -430,9 +430,14 @@
 
       try {
         const response = await fetch('chapter1.html');
-        const rawText = await response.text();
-        const jsonString = rawText.substring(rawText.indexOf('['), rawText.lastIndexOf(']') + 1);
-        let fullPool = JSON.parse(jsonString);
+        let fullPool = [];
+        try {
+          fullPool = await response.json();
+        } catch(e) {
+          const rawText = await response.text();
+          const jsonString = rawText.substring(rawText.indexOf('['), rawText.lastIndexOf(']') + 1);
+          fullPool = JSON.parse(jsonString);
+        }
 
         const limit = examConfigData?.questionLimit || fullPool.length;
         fullPool = fullPool.sort(() => 0.5 - Math.random());
@@ -443,7 +448,7 @@
         startExamTimer(examConfigData?.durationMinutes || 30);
         loadQuestion(0);
       } catch (error) {
-        alert("Failed to load test questions.");
+        alert("Failed to load test questions. Make sure chapter1.html exists.");
         startBtn.disabled = false;
         startBtn.innerText = "Start Examination";
       }
@@ -495,7 +500,7 @@
         const label = document.createElement('label');
         label.className = `option-label ${isSelected ? 'selected' : ''}`;
         label.innerHTML = `
-          <input type="radio" name="quiz-opt" value="${idx}" ${isSelected ? 'checked' : ''} onchange="selectOption(${index}, ${idx})">
+          <input type="radio" name="quiz-opt" value="${idx}" ${isSelected ? 'checked' : ''} onchange="window.selectOption(${index}, ${idx})">
           ${opt}
         `;
         optionsBlock.appendChild(label);
@@ -630,10 +635,6 @@
         alert("Submission Error: " + e.message);
       }
     }
-
-    // Explicit window mappings
-    window.handleNext = window.handleNext || handleNext;
-    window.handlePrevious = window.handlePrevious || handlePrevious;
 
     window.addEventListener('DOMContentLoaded', checkOverallExamWindow);
   </script>
